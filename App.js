@@ -22,6 +22,7 @@ MAYBE ALSO USE DAY OF THE WEEK WHEN FILTERING OUT RECORDS???????
 FIX THIS FOR DATE SPANS OF LESS THAN 1 WEEK - IS THE DURATION INCLUSIVE OF START AND END?
 */
 		var isDate = function (date) {
+			Ext.global.console.log('isDate()',date);
 			if ( Object.prototype.toString.call(date) === "[object Date]" ) {
 				// it is a date
 				Ext.global.console.log('Looks like a date:', date);
@@ -71,32 +72,6 @@ var date2 = new Date(2017, 05, 08); // now
 
 getBusinessDays(date1, date2);
 
-/*
-function getBusinessDateCount (startDate, endDate) {
-    var elapsed, daysBeforeFirstSaturday, daysAfterLastSunday;
-    var ifThen = function (a, b, c) {
-        return a == b ? c : a;
-    };
-
-    elapsed = endDate - startDate;
-    elapsed /= 86400000;
-
-    daysBeforeFirstSunday = (7 - startDate.getDay()) % 7;
-    daysAfterLastSunday = endDate.getDay();
-
-    elapsed -= (daysBeforeFirstSunday + daysAfterLastSunday);
-    elapsed = (elapsed / 7) * 5;
-    elapsed += ifThen(daysBeforeFirstSunday - 1, -1, 0) + ifThen(daysAfterLastSunday, 6, 5);
-
-    alert(Math.ceil(elapsed));
-}
-
-
-var date1 = new Date(2017, 04, 29);
-var date2 = new Date(2017, 04, 30); // now
-
-getBusinessDateCount(date1, date2);
-*/				
 		
 		Ext.create('Rally.data.lookback.SnapshotStore', {
 			context: {
@@ -109,9 +84,6 @@ getBusinessDateCount(date1, date2);
 			sort: {
 				_UnformattedID: 1
 			},
-
-		//	fetch: ['FormattedID', 'Name', 'ScheduleState', 'c_WorkItemStatus']
-			// reduced fields
 			fetch: ['FormattedID', 'c_WorkItemStatus', 'Name']
 		}).load({
 			callback: function(records){
@@ -137,7 +109,7 @@ if (typeof(Worker) !== "undefined") {
     // Sorry! No Web Worker support..
 	webWorkerSupport = 'Web Workers NOT available.'
 }
-				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>FIGURE OUT BAD DATE ISSUE.<BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
+				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Deal with accepted date being Thu Dec 31 9998:18:00:00 GMT-0600 (Central Standard .<BR>Clean up. and add story picker.<BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
 				var str = '';
 				var myfunc = function(element, index){
 					var dayFrom = new Date(records[index].data._ValidFrom);
@@ -165,14 +137,14 @@ if (typeof(Worker) !== "undefined") {
 											Ext.global.console.log('updateRecord.data._ValidTo:'+updateRecord.data._ValidTo+' << proposedRec._ValidTo:'+proposedRec._ValidTo)
 											updateRecord.data._ValidTo = proposedRec._ValidTo;											
 											Ext.global.console.log('UPDATED updateRecord.data._ValidTo:'+updateRecord.data._ValidTo+' << proposedRec._ValidTo:'+proposedRec._ValidTo)
-											updateRecord.elapsedBusinessDays = getBusinessDays(updateRecord._ValidFrom, updateRecord._ValidTo)
+											updateRecord.elapsedBusinessDays = getBusinessDays(updateRecord.data._ValidFrom, updateRecord.data._ValidTo)
 											Ext.global.console.log('Pushing UPDATED Record:',updateRecord);
 											filteredRecs.push(updateRecord);
 											
 									}else{										
 										Ext.global.console.log('previousRecord:'+previousRecord +' and record:'+record +'are different. pushing:'+record);
 										Ext.global.console.log('NOT EQUAL'+lastRec.FormattedID +'==' +proposedRec.FormattedID +lastRec.c_WorkItemStatus +'==' +proposedRec.c_WorkItemStatus +lastRec._ValidTo +'==' +proposedRec._ValidTo);
-										records[i].elapsedBusinessDays = getBusinessDays(records[i]._ValidFrom, records[i]._ValidTo)
+										records[i].elapsedBusinessDays = getBusinessDays(records[i].data._ValidFrom, records[i].data._ValidTo)
 										filteredRecs.push(records[i]);
 									}
 
@@ -181,8 +153,8 @@ if (typeof(Worker) !== "undefined") {
 								Ext.global.console.log(record+' and '+previousRecord+' are the same.  Skipping:str'+record+' total filtered:'+numberFilteredOut);
 							}							
 						}else{
-							records[i].elapsedBusinessDays = getBusinessDays(records[i]._ValidFrom, records[i]._ValidTo)
-							Ext.global.console.log('i='+i+'pushing:'+record);
+							records[i].elapsedBusinessDays = getBusinessDays(records[i].data._ValidFrom, records[i].data._ValidTo)
+							Ext.global.console.log('i='+i+'pushing:', records[i]);
 							filteredRecs.push(records[i]);
 						}				
 					}
@@ -193,7 +165,17 @@ if (typeof(Worker) !== "undefined") {
 						var dayTo = new Date(filteredRecs[i].data._ValidTo);					
 						Ext.global.console.log('Filtered Record:'+filteredRecs[i].data.FormattedID +', ' +filteredRecs[i].data.c_WorkItemStatus +', ' +dayFrom.toDateString()+':'+dayFrom.toTimeString()+',  '+dayTo.toDateString()+':'+dayTo.toTimeString() )
 					}
-					return filteredRecs
+
+					Ext.global.console.log('Filtered Recs:',filteredRecs);
+					var out = '';
+					for(var i=0; i<filteredRecs.length; i++){
+						var dayFrom = new Date(filteredRecs[i].data._ValidFrom);
+						var dayTo = new Date(filteredRecs[i].data._ValidTo);
+						out += 'Filtered Record:'+filteredRecs[i].data.FormattedID +', ' +filteredRecs[i].data.c_WorkItemStatus +', ' +dayFrom.toDateString()+':'+dayFrom.toTimeString()+',  '+dayTo.toDateString()+':'+dayTo.toTimeString() +',  Elapsed Business Days:'+filteredRecs[i].elapsedBusinessDays +'<BR>';
+					}
+//					return filteredRecs
+					Ext.global.console.log('out:'+out);
+					return out;
 				};
 
 				var childPanel1 = Ext.create('Ext.panel.Panel', {
