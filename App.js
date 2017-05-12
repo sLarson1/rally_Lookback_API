@@ -21,21 +21,55 @@ MAYBE ALSO USE DAY OF THE WEEK WHEN FILTERING OUT RECORDS???????
  
 FIX THIS FOR DATE SPANS OF LESS THAN 1 WEEK - IS THE DURATION INCLUSIVE OF START AND END?
 */
-
-		var getBusinessDays = function(startDate, endDate){
-			var leadingSaturday = 6;
-			var calendarDays = (endDate - startDate)/86400000;  // convert from milliseconds to days
-			var startDay = startDate.getDay();
-			var endDay = endDate.getDay();
-			var numberOfLeadingDays = leadingSaturday - startDay;
-			var numberOfTrailingDays = endDay;
-			var elapsedDaysBlock = calendayDays - numberOfLeadingDays - numberOfTrailingDays;
-			var calendarWeeks = Math.floor(elapsedDaysBlock / 7);
-			var businessDays = calendarWeeks * 5; // 5 business days per calendar week
-			var businessDaysTotal = businessDays + numberOfLeadingDays + numberOfTrailingDays;
-			
-			return businessDaysTotal;
+		var isDate = function (date) {
+			if ( Object.prototype.toString.call(date) === "[object Date]" ) {
+				// it is a date
+				Ext.global.console.log('Looks like a date:', date);
+				if ( isNaN( date.getTime() ) ) {  // d.valueOf() could also work
+					Ext.global.console.log('But not a good date format, returning false');
+					return false;
+				}
+				else {
+					Ext.global.console.log('And is a valid date format');
+					return true;
+				}
+			}
+			else {
+				// not a date
+				Ext.global.console.log('NOT A DATE!',date);
+				return false
+			}
 		}
+
+		var getBusinessDays = function(_startDate, _endDate){
+			var startDate = new Date(Date.parse(_startDate));
+			var endDate = new Date(Date.parse(_endDate));
+			var businessDaysTotal = -1;
+			if(isDate(startDate) && isDate(endDate)){
+				var leadingSaturday = 6;
+				var calendarDays = (endDate - startDate)/86400000;  // convert from milliseconds to days
+				var startDay = startDate.getDay();
+				var endDay = endDate.getDay();
+				var numberOfLeadingDays = leadingSaturday - startDay;
+				var numberOfTrailingDays = endDay;
+				var elapsedDaysBlock = calendarDays - numberOfLeadingDays - numberOfTrailingDays;
+				var calendarWeeks = Math.floor(elapsedDaysBlock / 7);
+				var businessDays = calendarWeeks * 5; // 5 business days per calendar week
+				businessDaysTotal = businessDays + numberOfLeadingDays + numberOfTrailingDays;
+			}else{
+				Ext.global.console.log('Not valid dates:'+startDate+' , '+endDate);
+			}
+			return businessDaysTotal;
+
+			//return businessDaysTotal;
+//			alert('start Date:'+startDate +' endDate:'+endDate +' businessDays:'+businessDaysTotal);
+			
+		}
+		
+var date1 = new Date(2017, 04, 28);
+var date2 = new Date(2017, 05, 08); // now
+
+getBusinessDays(date1, date2);
 
 /*
 function getBusinessDateCount (startDate, endDate) {
@@ -103,7 +137,7 @@ if (typeof(Worker) !== "undefined") {
     // Sorry! No Web Worker support..
 	webWorkerSupport = 'Web Workers NOT available.'
 }
-				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR> Keep Working on Filtering Update the timespan for a given workitem status so there is just a single entry with an updated validTo and validfrom.<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
+				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>FIGURE OUT BAD DATE ISSUE.<BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
 				var str = '';
 				var myfunc = function(element, index){
 					var dayFrom = new Date(records[index].data._ValidFrom);
@@ -122,23 +156,23 @@ if (typeof(Worker) !== "undefined") {
 							var previousRecord = records[i-1].data.FormattedID +', ' +records[i].data.c_WorkItemStatus +', ' + records[i-1].data._ValidFrom.substr(0, records[i-1].data._ValidFrom.indexOf("T")) +', ' + records[i-1].data._ValidTo.substr(0, records[i-1].data._ValidTo.indexOf("T"));
 							if(record!==previousRecord){
 
-//									var lastRec = filteredRecs[filteredRecs.length - 1].data;
 									var lastRec = filteredRecs[filteredRecs.length - 1].data;
 									var proposedRec = records[i].data;
 									if(lastRec.FormattedID===proposedRec.FormattedID && lastRec.c_WorkItemStatus===proposedRec.c_WorkItemStatus && lastRec._ValidTo.substr(0, lastRec._ValidTo.indexOf("T"))===proposedRec._ValidFrom.substr(0, proposedRec._ValidFrom.indexOf("T"))){											
 											Ext.global.console.log('ARE EQUAL!! - '+lastRec.FormattedID+'=='+proposedRec.FormattedID +lastRec.c_WorkItemStatus +'==' +proposedRec.c_WorkItemStatus +lastRec._ValidTo.substr(0, lastRec._ValidTo.indexOf("T")) +'==' +proposedRec._ValidFrom.substr(0, proposedRec._ValidFrom.indexOf("T")));											
 											var updateRecord = filteredRecs.pop();
 											Ext.global.console.log('OLD Record:',updateRecord);
-//											updateRecord._ValidTo = proposedRec._ValidTo;		
 											Ext.global.console.log('updateRecord.data._ValidTo:'+updateRecord.data._ValidTo+' << proposedRec._ValidTo:'+proposedRec._ValidTo)
 											updateRecord.data._ValidTo = proposedRec._ValidTo;											
 											Ext.global.console.log('UPDATED updateRecord.data._ValidTo:'+updateRecord.data._ValidTo+' << proposedRec._ValidTo:'+proposedRec._ValidTo)
+											updateRecord.elapsedBusinessDays = getBusinessDays(updateRecord._ValidFrom, updateRecord._ValidTo)
 											Ext.global.console.log('Pushing UPDATED Record:',updateRecord);
 											filteredRecs.push(updateRecord);
 											
 									}else{										
 										Ext.global.console.log('previousRecord:'+previousRecord +' and record:'+record +'are different. pushing:'+record);
 										Ext.global.console.log('NOT EQUAL'+lastRec.FormattedID +'==' +proposedRec.FormattedID +lastRec.c_WorkItemStatus +'==' +proposedRec.c_WorkItemStatus +lastRec._ValidTo +'==' +proposedRec._ValidTo);
+										records[i].elapsedBusinessDays = getBusinessDays(records[i]._ValidFrom, records[i]._ValidTo)
 										filteredRecs.push(records[i]);
 									}
 
@@ -147,8 +181,8 @@ if (typeof(Worker) !== "undefined") {
 								Ext.global.console.log(record+' and '+previousRecord+' are the same.  Skipping:str'+record+' total filtered:'+numberFilteredOut);
 							}							
 						}else{
+							records[i].elapsedBusinessDays = getBusinessDays(records[i]._ValidFrom, records[i]._ValidTo)
 							Ext.global.console.log('i='+i+'pushing:'+record);
-//							filteredRecs.push(record);
 							filteredRecs.push(records[i]);
 						}				
 					}
@@ -159,9 +193,9 @@ if (typeof(Worker) !== "undefined") {
 						var dayTo = new Date(filteredRecs[i].data._ValidTo);					
 						Ext.global.console.log('Filtered Record:'+filteredRecs[i].data.FormattedID +', ' +filteredRecs[i].data.c_WorkItemStatus +', ' +dayFrom.toDateString()+':'+dayFrom.toTimeString()+',  '+dayTo.toDateString()+':'+dayTo.toTimeString() )
 					}
-					return filteredRecs.join(",<BR>");
+					return filteredRecs
 				};
-				
+
 				var childPanel1 = Ext.create('Ext.panel.Panel', {
 					title: "Todo - 'C:\\tmp\\scripts\\rally_Lookback_API'",
 					autoScroll: true, 
