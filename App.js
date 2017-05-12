@@ -8,6 +8,61 @@ Ext.define('CustomApp', {
 		Uncomment to show an alert
 		Ext.Msg.alert('Button', 'You clicked me');
 		*/
+
+/*
+
+MAYBE ALSO USE DAY OF THE WEEK WHEN FILTERING OUT RECORDS???????
+
+ 1 -  Get calendar days  **	WE NEED TO ACCOUNT FOR IF THE TIME SPAN IS A WEEK OR LESS
+ 2 - Remove the 'vestigal' days from the front and end of the block of weeks temporarily
+ 3 - now do calendar days /7 and get the quotient -> this is the number of 7 day weeks
+ 4 - number of 7 day weeks * 5[for # of days in business week] = # of business days
+ 5 - # of business days + 'vestigal' days from step #2 = total number of business days
+ 
+FIX THIS FOR DATE SPANS OF LESS THAN 1 WEEK - IS THE DURATION INCLUSIVE OF START AND END?
+*/
+
+		var getBusinessDays = function(startDate, endDate){
+			var leadingSaturday = 6;
+			var calendarDays = (endDate - startDate)/86400000;  // convert from milliseconds to days
+			var startDay = startDate.getDay();
+			var endDay = endDate.getDay();
+			var numberOfLeadingDays = leadingSaturday - startDay;
+			var numberOfTrailingDays = endDay;
+			var elapsedDaysBlock = calendayDays - numberOfLeadingDays - numberOfTrailingDays;
+			var calendarWeeks = Math.floor(elapsedDaysBlock / 7);
+			var businessDays = calendarWeeks * 5; // 5 business days per calendar week
+			var businessDaysTotal = businessDays + numberOfLeadingDays + numberOfTrailingDays;
+			
+			return businessDaysTotal;
+		}
+
+/*
+function getBusinessDateCount (startDate, endDate) {
+    var elapsed, daysBeforeFirstSaturday, daysAfterLastSunday;
+    var ifThen = function (a, b, c) {
+        return a == b ? c : a;
+    };
+
+    elapsed = endDate - startDate;
+    elapsed /= 86400000;
+
+    daysBeforeFirstSunday = (7 - startDate.getDay()) % 7;
+    daysAfterLastSunday = endDate.getDay();
+
+    elapsed -= (daysBeforeFirstSunday + daysAfterLastSunday);
+    elapsed = (elapsed / 7) * 5;
+    elapsed += ifThen(daysBeforeFirstSunday - 1, -1, 0) + ifThen(daysAfterLastSunday, 6, 5);
+
+    alert(Math.ceil(elapsed));
+}
+
+
+var date1 = new Date(2017, 04, 29);
+var date2 = new Date(2017, 04, 30); // now
+
+getBusinessDateCount(date1, date2);
+*/				
 		
 		Ext.create('Rally.data.lookback.SnapshotStore', {
 			context: {
@@ -30,6 +85,8 @@ Ext.define('CustomApp', {
 				//	reduced fields
 				Ext.global.console.log('Record!', records[0].data.FormattedID+', '+records[0].data.c_WorkItemStatus);
 				Ext.global.console.log('Records Retrieved!', records);
+		
+				
 var majorVersion;				
 if (Ext.version !== undefined) {
 //    majorVersion = Ext.version.substring(0, Ext.version.indexOf("."));
@@ -46,7 +103,7 @@ if (typeof(Worker) !== "undefined") {
     // Sorry! No Web Worker support..
 	webWorkerSupport = 'Web Workers NOT available.'
 }
-				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR> Keep Working on Filtering Update the timespan for a given workitem status so there is just a single entry with an updated validTo and validfrom.<BR>  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
+				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR> Keep Working on Filtering Update the timespan for a given workitem status so there is just a single entry with an updated validTo and validfrom.<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
 				var str = '';
 				var myfunc = function(element, index){
 					var dayFrom = new Date(records[index].data._ValidFrom);
@@ -58,7 +115,6 @@ if (typeof(Worker) !== "undefined") {
 					var filteredRecs = [];
 					var numberFilteredOut = 0;
 
-Ext.global.console.log(records[0].data._ValidFrom+' , '+'Regex:'+records[0].data._ValidFrom.substr(0, records[0].data._ValidFrom.indexOf("T"))+'\n');
 					for(var i=0; i<records.length; i++){						
 						var record = records[i].data.FormattedID +', ' +records[i].data.c_WorkItemStatus +', ' + records[i].data._ValidFrom.substr(0, records[i].data._ValidFrom.indexOf("T")) +', ' + records[i].data._ValidTo.substr(0, records[i].data._ValidTo.indexOf("T"));
 						
