@@ -8,6 +8,24 @@ Ext.define('CustomApp', {
 		Uncomment to show an alert
 		Ext.Msg.alert('Button', 'You clicked me');
 		*/
+		this.iterationCombobox = this.add(
+		{
+			xtype: 'rallyiterationcombobox',
+			listeners: {
+//				ready: this._onIterationComboboxLoad,
+				select: this._onIterationComboboxChanged,				
+				scope: this
+			},			
+			renderTo: Ext.getBody().dom,
+			storeConfig: {
+				callback: function(records, operation, success) {
+					// do something after the load finishes
+					Ext.global.console.log('Store loaded:',records);
+				},
+			}
+		}
+		);	
+		
 
 /*
 
@@ -66,11 +84,7 @@ FIX THIS FOR DATE SPANS OF LESS THAN 1 WEEK - IS THE DURATION INCLUSIVE OF START
 //			alert('start Date:'+startDate +' endDate:'+endDate +' businessDays:'+businessDaysTotal);
 			
 		}
-		
-var date1 = new Date(2017, 04, 28);
-var date2 = new Date(2017, 05, 08); // now
 
-getBusinessDays(date1, date2);
 
 		
 		Ext.create('Rally.data.lookback.SnapshotStore', {
@@ -78,18 +92,22 @@ getBusinessDays(date1, date2);
 				workspace: '/workspace/15956831576'
 			},
 			find: {
-//				ObjectID: 94817414168
-				ObjectID: 86637102004
+				Iteration: 58371458876
+				//US6281
+//				ObjectID: 86637102004
 			},
 			sort: {
 				_UnformattedID: 1
 			},
-			fetch: ['FormattedID', 'c_WorkItemStatus', 'Name']
+			fetch: ['FormattedID', 'c_WorkItemStatus', 'Name', 'Iteration'],
+			// this paramter filters out many records
+			// that are germane to the fields we are interested in
+			compress : true
 		}).load({
 			callback: function(records){
 				// Ext.global.console.log('Record!', records[0].data.FormattedID+', '+ records[0].data.Name+', '+records[0].data.c_WorkItemStatus);
 				//	reduced fields
-				Ext.global.console.log('Record!', records[0].data.FormattedID+', '+records[0].data.c_WorkItemStatus);
+				Ext.global.console.log('Record!', records.length);
 				Ext.global.console.log('Records Retrieved!', records);
 		
 				
@@ -109,7 +127,7 @@ if (typeof(Worker) !== "undefined") {
     // Sorry! No Web Worker support..
 	webWorkerSupport = 'Web Workers NOT available.'
 }
-				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Deal with accepted date being Thu Dec 31 9998:18:00:00 GMT-0600 (Central Standard .<BR>Clean up. and add story picker.<BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
+				var todo = records[0].data.FormattedID+' '+records[0].data.Name+'<BR>&nbsp;&nbsp; ExtJS Version:'+majorVersion +'<BR>&nbsp;&nbsp;Webworker Support:'+webWorkerSupport+'<BR><BR>Deal with accepted date being Thu Dec 31 9998<BR>Add callback() to store. look at the store config for _onIterationComboboxChanged also look at:https://help.rallydev.com/apps/2.1/doc/#!/api/Ext.data.Store-method-load <BR>Look at issue with Peer Review not showing up....Also how do we account of the work status moves forward and then moves back???<BR>  Look at commented out function in this app.js file  Then implement elapsed business days:http://stackoverflow.com/questions/3464268/find-day-difference-between-two-dates-excluding-weekend-days<BR><BR><BR>';
 				var str = '';
 				var myfunc = function(element, index){
 					var dayFrom = new Date(records[index].data._ValidFrom);
@@ -121,7 +139,9 @@ if (typeof(Worker) !== "undefined") {
 					var filteredRecs = [];
 					var numberFilteredOut = 0;
 
-					for(var i=0; i<records.length; i++){						
+					for(var i=0; i<records.length; i++){		
+//group by date to filter out dup recs
+// then adjust the dates of the filtered records					
 						var record = records[i].data.FormattedID +', ' +records[i].data.c_WorkItemStatus +', ' + records[i].data._ValidFrom.substr(0, records[i].data._ValidFrom.indexOf("T")) +', ' + records[i].data._ValidTo.substr(0, records[i].data._ValidTo.indexOf("T"));
 						
 						if(i > 0){
@@ -201,5 +221,21 @@ if (typeof(Worker) !== "undefined") {
 		});			
 
 
-    }
+    },
+	_onIterationComboboxChanged: function(combo, records, obj) {
+		Ext.global.console.log('Iteration Query:',this.iterationCombobox.getQueryFromSelected()); 
+		Ext.global.console.log('Iteration displayField:',this.iterationCombobox.displayField); 
+		Ext.global.console.log('Iteration combo:',this.iterationCombobox); 
+		Ext.global.console.log('Iteration records:',records); 
+		var data = records[0].data
+		Ext.global.console.log('Iteration Info:'+data.formattedName +'(' +data.formattedStartDate +' - ' +data.formattedEndDate +') id:' +data.ObjectID); 
+		
+ 		var config = {
+			storeConfig: {
+				filters: [this.iterationCombobox.getQueryFromSelected()]
+			}
+		};
+
+
+	}	
 });
